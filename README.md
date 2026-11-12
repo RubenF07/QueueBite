@@ -169,14 +169,6 @@ and the user reaches it from the "add order" flow.
 If the design holds, a second lane is just a second instance of the same queue,
 and the observer still sends the same `Order[]` snapshot type.
 
-### Stretch goals
-
-- **Committing to:** keeping the queue swappable behind `QueueInterface<T>`,
-  and the priority/rush lane (as the change feature above).
-- **Dropping:** priority *scoring* (a numeric score with mid-chain insertion)
-  and the "realtime stream" framing. Two FIFO lanes give us the priority
-  behavior without inserting into the middle of a linked list.
-
 ### New tests needed
 
 - `LinkedQueueTest`: every case in the test plan, `enqueue(null)`, and
