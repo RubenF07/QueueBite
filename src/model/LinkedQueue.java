@@ -57,7 +57,7 @@ public class LinkedQueue<T> {
 
     public T dequeue() {
         if (isEmpty()) {
-            // TODO
+            throw new EmptyQueueException();
         }
         T val = head.getData();
         head = head.getNext();
@@ -72,7 +72,7 @@ public class LinkedQueue<T> {
 
     public T peek() {
         if (isEmpty()) {
-            // TODO
+            throw new EmptyQueueException();
         }
         return head.getData();
     }
