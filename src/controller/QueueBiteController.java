@@ -30,6 +30,10 @@ public class QueueBiteController {
             try {
                 int choice = view.readMenuChoice();
                 switch (choice) {
+                    case 0:
+                        running = false;
+                        view.showMessage("Goodbye!");
+                        break;
                     case 1:
                         view.showQueue();
                         break;
@@ -40,7 +44,8 @@ public class QueueBiteController {
                         completeNextOrder();
                         break;
                     default:
-                        view.showMessage("That isn't an option, pick 1, 2 or 3");
+                        view.showMessage(
+                            "That isn't an option, pick 0, 1, 2 or 3");
                 }
             }
             catch (NoSuchElementException e) {
@@ -65,9 +70,16 @@ public class QueueBiteController {
                 view.showMessage(e.getMessage());
             }
         }
+        // Only ask about rush if there is something to order; an empty
+        // order is still sent to the model so it can reject it
+        boolean rush = false;
+        if (!items.isEmpty()) {
+            rush = view.readYesNo("Rush order? (y/n): ");
+        }
         try {
-            Order order = model.placeOrder(items);
-            view.showMessage("Order #" + order.getOrderId() + " placed.");
+            Order order = model.placeOrder(items, rush);
+            String label = order.isRush() ? "Rush order #" : "Order #";
+            view.showMessage(label + order.getOrderId() + " placed.");
         }
         catch (IllegalArgumentException e) {
             view.showMessage("An order needs at least one item");
