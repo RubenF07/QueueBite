@@ -2,22 +2,22 @@ package model;
 
 import java.util.List;
 
-public class QueueInterface {
-    private LinkedQueue<Order> queue;
+public class QueueInterface<T> {
+    private LinkedQueue<T> queue;
 
     public QueueInterface() {
         queue = new LinkedQueue<>();
     }
 
-    public void addOrder(Order order) {
+    public void addOrder(T order) {
         queue.enqueue(order);
     }
 
-    public Order removeNextOrder() {
+    public T removeNextOrder() {
         return queue.dequeue();
     }
 
-    public Order viewNextOrder() {
+    public T viewNextOrder() {
         return queue.peek();
     }
 
@@ -29,7 +29,7 @@ public class QueueInterface {
         return queue.size();
     }
 
-    public List<Order> getOrders() {
+    public List<T> getOrders() {
         return queue.toList();
     }
 }
