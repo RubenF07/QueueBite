@@ -30,13 +30,23 @@ class LinkedQueueTest {
     }
 
     @Test
-    void enqueue_nullIsAcceptedAsAValue() {
-        // Current behavior: no null check, so null is stored like any value.
-        queue.enqueue(null);
+    void enqueue_nullIsRejected() {
+        // Bad input: null must not be stored, and the queue must not change.
+        assertThrows(IllegalArgumentException.class, () -> queue.enqueue(null));
 
-        assertEquals(1, queue.size());
-        assertFalse(queue.isEmpty());
-        assertNull(queue.peek());
+        assertEquals(0, queue.size());
+        assertTrue(queue.isEmpty());
+    }
+
+    @Test
+    void worksThroughQueueInterface() {
+        // Code that only knows the interface can still use the queue.
+        QueueInterface<String> q = new LinkedQueue<>();
+        q.enqueue("a");
+        q.enqueue("b");
+
+        assertEquals("a", q.dequeue());
+        assertEquals(1, q.size());
     }
 
     // ---------- dequeue ----------

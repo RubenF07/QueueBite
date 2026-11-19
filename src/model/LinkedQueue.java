@@ -3,94 +3,82 @@ package model;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LinkedQueue<T> {
-    private class Node<T> {
-        private T data;
-        private Node<T> prev;
+/**
+ * A singly linked FIFO queue. Enqueue at the tail and dequeue at the head
+ * are both O(1).
+ *
+ * @param <T> the type of entry stored in the queue
+ */
+public class LinkedQueue<T> implements QueueInterface<T> {
+    private static class Node<T> {
+        private final T data;
         private Node<T> next;
 
-        Node(T val, Node<T> prev, Node<T> next) {
-            this.data = val;
-            this.prev = prev;
-            this.next = next;
-        }
-
-        public T getData() {
-            return data;
-        }
-
-        public void setData(T data) {
+        Node(T data) {
             this.data = data;
         }
-
-        public Node<T> getPrev() {
-            return prev;
-        }
-
-        public void setPrev(Node<T> prev) {
-            this.prev = prev;
-        }
-
-        public Node<T> getNext() {
-            return next;
-        }
-
-        public void setNext(Node<T> next) {
-            this.next = next;
-        }
     }
-    
+
+    // Package-private so LinkedQueueTest can check the head/tail invariants
     Node<T> head;
     Node<T> tail;
     private int size;
 
-    public void enqueue(T val) {
-        Node<T> newNode = new Node<>(val, tail, null);
+    @Override
+    public void enqueue(T entry) {
+        if (entry == null) {
+            throw new IllegalArgumentException("Can't enqueue null");
+        }
+        Node<T> newNode = new Node<>(entry);
         if (isEmpty()) {
             head = newNode;
-        } else {
-            tail.setNext(newNode);
+        }
+        else {
+            tail.next = newNode;
         }
         tail = newNode;
         size++;
     }
 
+    @Override
     public T dequeue() {
         if (isEmpty()) {
             throw new EmptyQueueException();
         }
-        T val = head.getData();
-        head = head.getNext();
+        T data = head.data;
+        head = head.next;
         if (head == null) {
             tail = null;
-        } else {
-            head.setPrev(null);
         }
         size--;
-        return val;
+        return data;
     }
 
+    @Override
     public T peek() {
         if (isEmpty()) {
             throw new EmptyQueueException();
         }
-        return head.getData();
+        return head.data;
     }
 
+    @Override
     public boolean isEmpty() {
         return size == 0;
     }
 
+    @Override
     public int size() {
         return size;
     }
-    
+
+    @Override
     public List<T> toList() {
         List<T> list = new ArrayList<>();
         Node<T> current = head;
         while (current != null) {
-            list.add(current.getData());
-            current = current.getNext();
+            list.add(current.data);
+            current = current.next;
         }
         return list;
     }

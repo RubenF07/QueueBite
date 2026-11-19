@@ -27,7 +27,7 @@ Bad input never crashes the app:
 - Completing when nothing is waiting shows "No orders waiting."
 
 **Run the tests:** in Eclipse, right-click the `test` folder and choose *Run As >
-JUnit Test*. All 52 tests run against the `model` package only. No view,
+JUnit Test*. All 53 tests run against the `model` package only. No view,
 controller, or `Scanner` is created.
 
 ## Project layout
@@ -46,8 +46,14 @@ controller, or `Scanner` is created.
 - **Exit option.** `0` now quits. Before, you had to end input.
 - **Queue tests.** `LinkedQueueTest` covers every queue method, including the
   tail-pointer edge case.
-- **More tests.** There are 52 now (up from 26), including the rush-lane cases.
-- **Generic `QueueInterface<T>`.** It used to be hard-coded to `Order`.
+- **More tests.** There are 53 now (up from 26), including the rush-lane cases.
+- **`QueueInterface<T>` is now a real interface.** `LinkedQueue<T>` implements
+  it, and `OrderManager` stores both lanes as `QueueInterface<Order>`. To swap
+  in a different queue, you'd only change the two lines in `OrderManager`'s
+  constructor.
+- **Cleaned-up `LinkedQueue`.** It's now singly linked, as the spec says (the
+  unused `prev` pointers are gone), and `enqueue(null)` throws
+  `IllegalArgumentException`.
 
 ---
 
@@ -60,10 +66,10 @@ The rush lane touched exactly the four classes we predicted in Deliverable 3:
 | Class | Predicted | Actual change |
 |-------|-----------|---------------|
 | `Order` (model) | Change | Added a `rush` field, `isRush()`, and a 3-argument constructor. The 2-argument constructor still makes a regular order. |
-| `OrderManager` (model) | Change | Added a second `LinkedQueue<Order>` for rush orders and `placeOrder(items, rush)`. `completeNextOrder()` serves rush first, and the snapshot lists rush orders, then regular ones. |
+| `OrderManager` (model) | Change | Added a second queue for rush orders and `placeOrder(items, rush)`. `completeNextOrder()` serves rush first, and the snapshot lists rush orders, then regular ones. |
 | `QueueBiteController` (controller) | Change | Asks "Rush order?" after the items and passes the answer to `placeOrder`. |
 | `QueueBiteView` (view) | Change | Added `readYesNo()` and the `[RUSH]` tag. |
-| `LinkedQueue`, `OrderItem`, `OrderQueueListener`, `EmptyQueueException`, `QueueBiteApp` | No change | No change for the feature. |
+| `LinkedQueue`, `QueueInterface`, `OrderItem`, `OrderQueueListener`, `EmptyQueueException`, `QueueBiteApp` | No change | No change for the feature. `LinkedQueue` and `QueueInterface` were changed separately, as MVP cleanup (see below). |
 
 **What matched:** everything on the prediction list. A second lane really was
 just a second instance of the same `LinkedQueue`. `EmptyQueueException` still
@@ -74,9 +80,11 @@ works without changes: when both lanes are empty, the regular lane's
 - **Queue positions needed no change at all.** The model builds the snapshot in
   serving order (rush first), so the view's existing "position in line" numbers
   are automatically correct.
-- **`QueueInterface` did change, but not because of the feature.** We predicted
-  it wouldn't, but Ruben made it generic as part of the MVP cleanup from our
-  Deliverable 3 to-do list.
+- **`QueueInterface` and `LinkedQueue` did change, but not because of the
+  feature.** We turned `QueueInterface` into a real interface and cleaned up
+  `LinkedQueue` as part of the MVP cleanup from our Deliverable 3 to-do list.
+  After that, `OrderManager` could hold both lanes as `QueueInterface<Order>`
+  by changing only the two field types.
 - **The exit option also changed the controller and view.** That was Deliverable
   3 cleanup, not the rush feature.
 
@@ -93,14 +101,14 @@ run with only a `RecordingListener`.
 
 ### What changed from our Deliverable 3 plan?
 
-- **`QueueInterface<T>` is generic but is still a class.** We planned a real
-  interface that `LinkedQueue` implements. It still wraps a `LinkedQueue`
-  internally. Because it isn't an interface yet, `OrderManager` holds both lanes
-  as `LinkedQueue<Order>`, not `QueueInterface<Order>` as planned.
-- **`LinkedQueue` wasn't cleaned up.** It's still doubly linked (the `prev`
-  pointers aren't used), still uses `toList()` instead of `toArray()`, and still
-  accepts `null`. `LinkedQueueTest` records the current behavior: its
-  `enqueue_nullIsAcceptedAsAValue` test expects null to be stored.
+- **`QueueInterface<T>` uses `toList()`, not `toArray()`.** We planned a
+  `toArray()` snapshot, but a generic method can't easily create a `T[]` in
+  Java. `toList()` returns a new list, so changing it still doesn't change the
+  queue.
+- **Ruben's null test was flipped.** `LinkedQueueTest` first recorded the old
+  behavior (null accepted). Once `enqueue(null)` started throwing, as the spec
+  says, the test was changed to expect `IllegalArgumentException`. We also
+  added a test that uses the queue only through `QueueInterface`.
 - **We kept the old `placeOrder(items)`** as an overload that makes a regular
   order. That way none of the Deliverable 3 tests had to change.
 - **The rush question is only asked when the order has items.** An empty order
@@ -114,17 +122,12 @@ run with only a `RecordingListener`.
 
 ### What doesn't work yet?
 
-- `LinkedQueue.enqueue(null)` is accepted. The spec says it should throw
-  `IllegalArgumentException`. The app never enqueues null, so this can't happen
-  through the menu.
-- `QueueInterface` isn't a real interface, so the queue implementation can't be
-  swapped.
 - Order IDs past `Integer.MAX_VALUE` aren't handled. We can't reach this in
   practice.
 - "done" can't be ordered as an item name, because it's the word that ends an
   order.
 - An order can't be switched between rush and regular after it's placed.
-- All 52 tests pass. There are no view or controller tests, because the rubric
+- All 53 tests pass. There are no view or controller tests, because the rubric
   says tests target the model.
 
 ---
@@ -133,28 +136,26 @@ run with only a `RecordingListener`.
 
 ### What is left for the final build (in order)
 
-1. Make `QueueInterface<T>` a real interface (enqueue, dequeue, peek, isEmpty,
-   size, toArray) and have `LinkedQueue<T>` implement it. Drop the unused `prev`
-   pointer, and make `enqueue(null)` throw `IllegalArgumentException`. Update
-   `LinkedQueueTest` to match.
-2. Have `OrderManager` hold both lanes as `QueueInterface<Order>`.
-3. Throw `IllegalStateException` in `placeOrder` when IDs run out, as in the
+1. Review the new `QueueInterface` / `LinkedQueue` code, and add queue tests
+   for longer sequences (for example, enqueue and dequeue 100 entries, and
+   check that `toList()` is still independent after a dequeue).
+2. Throw `IllegalStateException` in `placeOrder` when IDs run out, as in the
    spec, with a test.
-4. Add more `OrderItem` edge-case tests, such as `"2 burgers"` and `"7Up"` with
+3. Add more `OrderItem` edge-case tests, such as `"2 burgers"` and `"7Up"` with
    surrounding spaces.
-5. Final README pass and a demo rehearsal.
+4. Final README pass and a demo rehearsal.
 
 ### Stretch goals
 
-- **Committing to:** the rush lane (done) and making the queue swappable behind
-  `QueueInterface<T>` (step 1 above).
+- **Committing to:** the rush lane and making the queue swappable behind
+  `QueueInterface<T>`. Both are done.
 - **Dropping:** priority *scores* with mid-chain insertion, the "realtime
   stream" of orders, and completed-order history. Two FIFO lanes give us
   priority behavior without inserting into the middle of a linked list.
 
 ### Our 3-minute demo
 
-1. Run the JUnit tests and show the green bar: 52 passing, no view needed.
+1. Run the JUnit tests and show the green bar: 53 passing, no view needed.
 2. Start the app and view the empty queue.
 3. Add a regular order: "Burger" × 2, "Fries" × 1, `done`, `n`.
 4. Add a rush order: "Shake" × 1, `done`, `y`. The queue shows the shake at
@@ -174,10 +175,10 @@ run with only a `RecordingListener`.
 
 | Member    | Remaining work |
 |-----------|----------------|
-| Ruben     | Step 1: real `QueueInterface<T>`, `LinkedQueue` cleanup, `LinkedQueueTest` updates |
-| Elsie     | Steps 2–3: `OrderManager` on `QueueInterface<Order>`, ID-exhaustion check and test |
-| Adarsh    | Step 4: extra `OrderItem` / `Order` edge-case tests |
-| Krishanth | Step 5: README, demo script and rehearsal, any view/controller fixes from the demo |
+| Ruben     | Step 1: queue code review and extra `LinkedQueueTest` cases |
+| Elsie     | Step 2: ID-exhaustion check and test in `OrderManager` |
+| Adarsh    | Step 3: extra `OrderItem` / `Order` edge-case tests |
+| Krishanth | Step 4: README, demo script and rehearsal, any view/controller fixes from the demo |
 
 ---
 
@@ -185,10 +186,10 @@ run with only a `RecordingListener`.
 
 | Class / test file | Owner | How |
 |-------------------|-------|-----|
-| `QueueInterface<T>` | Ruben | Wrote. Made generic for Deliverable 4 |
-| `LinkedQueue<T>` | Ruben | Wrote. The empty-queue `EmptyQueueException` throws were GenAI-assisted (Claude Code) |
+| `QueueInterface<T>` | Ruben | Wrote the first version and made it generic. Converting it to a real interface was GenAI-assisted (Claude Code) |
+| `LinkedQueue<T>` | Ruben | Wrote the first version. The empty-queue throws, the singly-linked rewrite, the null check, and implementing `QueueInterface` were GenAI-assisted (Claude Code) |
 | `EmptyQueueException` | Ruben | GenAI-assisted (Claude Code) |
-| `LinkedQueueTest` | Ruben | Wrote. Missing imports, `@BeforeEach`, and the Java 8 fix (`Arrays.asList`) were GenAI-assisted (Claude Code) |
+| `LinkedQueueTest` | Ruben | Wrote. Missing imports, `@BeforeEach`, the Java 8 fix (`Arrays.asList`), the flipped null test, and the interface test were GenAI-assisted (Claude Code) |
 | `OrderItem` | Adarsh | GenAI-assisted (Claude Code) |
 | `Order` | Adarsh | GenAI-assisted (Claude Code), including the rush flag |
 | `OrderQueueListener` | Adarsh | GenAI-assisted (Claude Code) |
@@ -210,7 +211,8 @@ Deliverable 4 we also used it to:
 - add the rush prompt and exit option to the view and controller
 - write the rush-lane tests
 - fix `LinkedQueueTest` so it compiles and runs
+- turn `QueueInterface` into a real interface and clean up `LinkedQueue`
 
-`QueueInterface`, the core of `LinkedQueue`, and the `LinkedQueueTest` cases
-were written by Ruben. We checked the work by running all 52 JUnit tests
+The first versions of `QueueInterface` and `LinkedQueue`, and most of the
+`LinkedQueueTest` cases, were written by Ruben. We checked the work by running all 53 JUnit tests
 and walking through the demo path, including every bad-input case listed above.

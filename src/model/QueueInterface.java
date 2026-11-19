@@ -2,34 +2,53 @@ package model;
 
 import java.util.List;
 
-public class QueueInterface<T> {
-    private LinkedQueue<T> queue;
+/**
+ * A FIFO queue. Code that depends on this interface instead of a specific
+ * class can have its queue implementation swapped without other changes.
+ *
+ * @param <T> the type of entry stored in the queue
+ */
+public interface QueueInterface<T> {
 
-    public QueueInterface() {
-        queue = new LinkedQueue<>();
-    }
+    /**
+     * Adds an entry at the back of the queue.
+     *
+     * @param entry the entry to add
+     * @throws IllegalArgumentException if entry is null
+     */
+    void enqueue(T entry);
 
-    public void addOrder(T order) {
-        queue.enqueue(order);
-    }
+    /**
+     * Removes and returns the entry at the front of the queue.
+     *
+     * @return the front entry
+     * @throws EmptyQueueException if the queue is empty
+     */
+    T dequeue();
 
-    public T removeNextOrder() {
-        return queue.dequeue();
-    }
+    /**
+     * Returns the entry at the front of the queue without removing it.
+     *
+     * @return the front entry
+     * @throws EmptyQueueException if the queue is empty
+     */
+    T peek();
 
-    public T viewNextOrder() {
-        return queue.peek();
-    }
+    /**
+     * @return true if the queue has no entries
+     */
+    boolean isEmpty();
 
-    public boolean isEmpty() {
-        return queue.isEmpty();
-    }
+    /**
+     * @return the number of entries in the queue
+     */
+    int size();
 
-    public int getSize() {
-        return queue.size();
-    }
-
-    public List<T> getOrders() {
-        return queue.toList();
-    }
+    /**
+     * Returns a snapshot of the entries from front to back. Changing the
+     * returned list does not change the queue.
+     *
+     * @return a new list of the entries, empty if the queue is empty
+     */
+    List<T> toList();
 }

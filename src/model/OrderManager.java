@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderManager {
-    private final LinkedQueue<Order> regularQueue;
-    private final LinkedQueue<Order> rushQueue;
+    // Declared as the interface so the queue implementation can be swapped
+    // by changing only the two lines in the constructor
+    private final QueueInterface<Order> regularQueue;
+    private final QueueInterface<Order> rushQueue;
     private final List<OrderQueueListener> listeners;
     private int nextOrderId;
 
