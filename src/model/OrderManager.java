@@ -4,33 +4,54 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderManager {
-    private final LinkedQueue<Order> queue;
+    private final LinkedQueue<Order> regularQueue;
+    private final LinkedQueue<Order> rushQueue;
     private final List<OrderQueueListener> listeners;
     private int nextOrderId;
 
     public OrderManager() {
-        queue = new LinkedQueue<>();
+        regularQueue = new LinkedQueue<>();
+        rushQueue = new LinkedQueue<>();
         listeners = new ArrayList<>();
         nextOrderId = 1;
     }
 
     public Order placeOrder(List<OrderItem> items) {
+        return placeOrder(items, false);
+    }
+
+    public Order placeOrder(List<OrderItem> items, boolean rush) {
         // Order's constructor validates; if it throws, no ID is used up
-        Order order = new Order(nextOrderId, items);
-        queue.enqueue(order);
+        Order order = new Order(nextOrderId, items, rush);
+        if (rush) {
+            rushQueue.enqueue(order);
+        }
+        else {
+            regularQueue.enqueue(order);
+        }
         nextOrderId++;
         notifyListeners();
         return order;
     }
 
     public Order completeNextOrder() {
-        Order order = queue.dequeue();
+        // Rush orders are always served first; if both lanes are empty,
+        // regularQueue.dequeue() throws EmptyQueueException
+        Order order;
+        if (!rushQueue.isEmpty()) {
+            order = rushQueue.dequeue();
+        }
+        else {
+            order = regularQueue.dequeue();
+        }
         notifyListeners();
         return order;
     }
 
     public Order[] getPendingOrders() {
-        return queue.toList().toArray(new Order[0]);
+        List<Order> all = rushQueue.toList();
+        all.addAll(regularQueue.toList());
+        return all.toArray(new Order[0]);
     }
 
     public void addListener(OrderQueueListener listener) {

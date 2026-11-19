@@ -2,13 +2,18 @@ package model;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
 import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 
 class LinkedQueueTest {
 
     private LinkedQueue<String> queue;
 
+    @BeforeEach
     void setUp() {
         queue = new LinkedQueue<>();
     }
@@ -21,7 +26,7 @@ class LinkedQueueTest {
         queue.enqueue("c");
 
         assertEquals(3, queue.size());
-        assertEquals(List.of("a", "b", "c"), queue.toList());
+        assertEquals(Arrays.asList("a", "b", "c"), queue.toList());
     }
 
     @Test
@@ -115,7 +120,7 @@ class LinkedQueueTest {
         queue.enqueue("x");
         queue.enqueue("y");
 
-        assertEquals(List.of("x", "y"), queue.toList());
+        assertEquals(Arrays.asList("x", "y"), queue.toList());
     }
 
     @Test
@@ -134,7 +139,7 @@ class LinkedQueueTest {
         result.add("hacked");
 
         assertEquals(1, queue.size());
-        assertEquals(List.of("a"), queue.toList());
+        assertEquals(Arrays.asList("a"), queue.toList());
     }
 
 
@@ -157,7 +162,7 @@ class LinkedQueueTest {
         assertEquals(1, queue.size());
         assertEquals("b", queue.peek());
         assertSame(queue.head, queue.tail);
-        assertEquals(List.of("b"), queue.toList());
+        assertEquals(Arrays.asList("b"), queue.toList());
 
         assertEquals("b", queue.dequeue());
         assertTrue(queue.isEmpty());

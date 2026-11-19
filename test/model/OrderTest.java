@@ -1,6 +1,8 @@
 package model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,5 +55,28 @@ public class OrderTest {
     @Test(expected = IllegalArgumentException.class)
     public void testNonPositiveIdRejected() {
         new Order(0, Arrays.asList(new OrderItem("Burger", 1)));
+    }
+
+    // ---------- rush flag ----------
+
+    @Test
+    public void testRushOrder() {
+        Order order =
+            new Order(1, Arrays.asList(new OrderItem("Burger", 1)), true);
+        assertTrue(order.isRush());
+    }
+
+    @Test
+    public void testRegularOrderIsNotRush() {
+        Order explicit =
+            new Order(1, Arrays.asList(new OrderItem("Burger", 1)), false);
+        Order byDefault = new Order(2, Arrays.asList(new OrderItem("Fries", 1)));
+        assertFalse(explicit.isRush());
+        assertFalse(byDefault.isRush());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testEmptyRushOrderRejected() {
+        new Order(1, new ArrayList<OrderItem>(), true);
     }
 }

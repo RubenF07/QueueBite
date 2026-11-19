@@ -2,6 +2,7 @@ package model;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -114,5 +115,88 @@ public class OrderManagerTest {
         snapshot[0] = null;
         assertEquals(1, manager.getPendingOrders()[0].getOrderId());
         assertNotSame(snapshot, manager.getPendingOrders());
+    }
+
+    // ---------- rush lane ----------
+
+    @Test
+    public void testRushOrderCompletedBeforeOlderRegularOrder() {
+        manager.placeOrder(items("Burger"), false);
+        manager.placeOrder(items("Fries"), true);
+        Order first = manager.completeNextOrder();
+        assertEquals(2, first.getOrderId());
+        assertTrue(first.isRush());
+        assertEquals(1, manager.completeNextOrder().getOrderId());
+    }
+
+    @Test
+    public void testEachLaneIsFifo() {
+        manager.placeOrder(items("A"), true);
+        manager.placeOrder(items("B"), false);
+        manager.placeOrder(items("C"), true);
+        manager.placeOrder(items("D"), false);
+        assertEquals(1, manager.completeNextOrder().getOrderId());
+        assertEquals(3, manager.completeNextOrder().getOrderId());
+        assertEquals(2, manager.completeNextOrder().getOrderId());
+        assertEquals(4, manager.completeNextOrder().getOrderId());
+    }
+
+    @Test
+    public void testIdsSharedAcrossLanes() {
+        assertEquals(1, manager.placeOrder(items("A"), false).getOrderId());
+        assertEquals(2, manager.placeOrder(items("B"), true).getOrderId());
+        assertEquals(3, manager.placeOrder(items("C"), false).getOrderId());
+    }
+
+    @Test
+    public void testSnapshotListsRushOrdersFirst() {
+        manager.placeOrder(items("A"), false);
+        manager.placeOrder(items("B"), true);
+        manager.placeOrder(items("C"), false);
+        Order[] snapshot = manager.getPendingOrders();
+        assertEquals(3, snapshot.length);
+        assertEquals(2, snapshot[0].getOrderId());
+        assertEquals(1, snapshot[1].getOrderId());
+        assertEquals(3, snapshot[2].getOrderId());
+    }
+
+    @Test
+    public void testRushPlacementNotifiesListener() {
+        manager.addListener(listener);
+        manager.placeOrder(items("A"), true);
+        assertEquals(2, listener.getCallCount());
+        assertTrue(listener.getLastSnapshot()[0].isRush());
+    }
+
+    @Test
+    public void testInvalidRushOrderUsesNoIdAndDoesNotNotify() {
+        manager.addListener(listener);
+        try {
+            manager.placeOrder(new ArrayList<OrderItem>(), true);
+            fail("Expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException e) {
+            // expected
+        }
+        assertEquals(1, listener.getCallCount());
+        assertEquals(0, manager.getPendingOrders().length);
+        assertEquals(1, manager.placeOrder(items("A"), true).getOrderId());
+    }
+
+    @Test
+    public void testCompleteWithBothLanesEmptyThrows() {
+        manager.placeOrder(items("A"), true);
+        manager.placeOrder(items("B"), false);
+        manager.completeNextOrder();
+        manager.completeNextOrder();
+        manager.addListener(listener);
+        try {
+            manager.completeNextOrder();
+            fail("Expected EmptyQueueException");
+        }
+        catch (EmptyQueueException e) {
+            // expected
+        }
+        assertEquals(1, listener.getCallCount());
     }
 }

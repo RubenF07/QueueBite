@@ -7,8 +7,13 @@ import java.util.List;
 public class Order {
     private final int orderId;
     private final List<OrderItem> items;
+    private final boolean rush;
 
     public Order(int orderId, List<OrderItem> items) {
+        this(orderId, items, false);
+    }
+
+    public Order(int orderId, List<OrderItem> items, boolean rush) {
         if (orderId < 1) {
             throw new IllegalArgumentException("Order ID must be positive");
         }
@@ -21,6 +26,7 @@ public class Order {
         }
         this.orderId = orderId;
         this.items = Collections.unmodifiableList(new ArrayList<>(items));
+        this.rush = rush;
     }
 
     public int getOrderId() {
@@ -29,5 +35,9 @@ public class Order {
 
     public List<OrderItem> getItems() {
         return items;
+    }
+
+    public boolean isRush() {
+        return rush;
     }
 }
